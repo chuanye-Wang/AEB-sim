@@ -1,4 +1,10 @@
 import carla 
+import sys
+carla_root = 'D:\Software\Carla\CARLA_0.9.15\WindowsNoEditor\PythonAPI\carla'
+sys.path.append(carla_root)
+
+from agents.navigation.global_route_planner import GlobalRoutePlanner # type:ignore
+
 
 try:
     client = carla.Client("localhost",2000)
@@ -12,24 +18,30 @@ map = world.get_map()
 spawn_points = map.get_spawn_points()
 # print(spawn_points)
 
-# debug = world.debug
-
-# for i in spawn_points:
-#     debug.draw_point(i.location, size=0.5, color=carla.Color(255,255,0), life_time=10)
+debug = world.debug
 
 blue_print_lib = world.get_blueprint_library()
 
+# try:
+#     vehicle_bp = blue_print_lib.find("vehicle.tesla.cybertruck")
+# except IndexError:
+#     print('error')
+
+# cybertruck = world.spawn_actor(vehicle_bp, spawn_points[9])
+
+samp_res = 2
 try:
-    vehicle_bp = blue_print_lib.find("vehicle.tesla.cybertruck")
-except IndexError:
-    print('error')
+    grp = GlobalRoutePlanner(map, samp_res)
+except Exception:
+    print('damn')
 
-car = world.spawn_actor(vehicle_bp, spawn_points[8])
+start_point = 98
+distination_point = 27
 
-import time
-time.sleep(1)
+start_loc = spawn_points[start_point].location
+dis_loc = spawn_points[distination_point].location
 
-car.set_autopilot(True)
+way_points = grp.trace_route(start_loc,dis_loc)
 
-time.sleep(10)
-car.destroy()
+for this_wp, _ in way_points:
+    world.debug.draw_string(this_wp.transform.location,'O',draw_shadow=False, color=carla.Color(0,0,225), life_time = 10)
