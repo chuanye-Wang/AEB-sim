@@ -6,7 +6,8 @@ sys.path.append(carla_root)
 
 from agents.navigation.global_route_planner import GlobalRoutePlanner # type:ignore
 from agents.navigation.controller import VehiclePIDController
-from agents.tools.misc import distance_vehicle
+from agents.tools.misc import distance_vehicle, is_within_distance
+
 try:
     client = carla.Client("localhost",2000)
 
@@ -51,9 +52,12 @@ args_lateral_dict = {'K_P': 1.95,'K_D': 0.2,'K_I': 0.07,'dt': 1.0 / 10.0}
 args_long_dict = {'K_P': 1,'K_D': 0.0,'K_I': 0.75,'dt': 1.0 / 10.0}
 controller = VehiclePIDController(cybertruck, args_lateral_dict, args_long_dict)
 
-speed = 30
+speed = 40
 next_waypoint = way_points[1][0]
 index = 1
+
+obs_car_bp = blue_print_lib.find('vehicle.tesla.model3')
+obs_car = world.spawn_actor(obs_car_bp, spawn_points[49])
 
 try:
     for pi,pj in zip(way_points[:-1], way_points[1:]):
@@ -63,6 +67,14 @@ try:
 
 
     while(True):
+        judge = is_within_distance(obs_car.get_transform(), cybertruck.get_transform(), 25, [-50,50])
+        if judge:
+            control.throttle = 0
+            control.brake = 0.5
+            control.hand_brake = False
+            cybertruck.apply_control(control)
+            continue
+
         ego_transform = cybertruck.get_transform()
         control = controller.run_step(speed, next_waypoint)
         dis_to_next_waypoint = distance_vehicle(next_waypoint, ego_transform)
@@ -78,4 +90,4 @@ try:
 
 finally:
     cybertruck.destroy()
-
+    obs_car.destroy()
