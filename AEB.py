@@ -59,6 +59,9 @@ index = 1
 obs_car_bp = blue_print_lib.find('vehicle.tesla.model3')
 obs_car = world.spawn_actor(obs_car_bp, spawn_points[49])
 
+spectator = world.get_spectator()
+
+
 try:
     for pi,pj in zip(way_points[:-1], way_points[1:]):
         pi_loc = pi[0].transform.location
@@ -73,12 +76,18 @@ try:
             control.brake = 0.5
             control.hand_brake = False
             cybertruck.apply_control(control)
-            continue
+            break
 
         ego_transform = cybertruck.get_transform()
         control = controller.run_step(speed, next_waypoint)
         dis_to_next_waypoint = distance_vehicle(next_waypoint, ego_transform)
         cybertruck.apply_control(control)
+
+        # spec_transform = carla.Transform(ego_transform.location + carla.Location(x=-0.5,y=-0.3,z=1.8),ego_transform.rotation)
+        # spectator.set_transform(spec_transform)
+
+        spec_transform = carla.Transform(ego_transform.location + carla.Location(z=30),carla.Rotation(pitch=-90))
+        spectator.set_transform(spec_transform)
 
         if dis_to_next_waypoint < 1.5:
             index += 1
@@ -86,7 +95,9 @@ try:
         
         if index == len(way_points) - 1:
             break
+        pass
 
+    time.sleep(5)
 
 finally:
     cybertruck.destroy()
